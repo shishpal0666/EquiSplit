@@ -5,6 +5,7 @@ const Expense = require('../models/Expense');
 const Group = require('../models/Group');
 const auth = require('../middleware/auth');
 const { calculateEqualSplit, validateCustomSplit } = require('../utils/splitCalculator');
+const { isValidObjectId } = require('../utils/validators');
 
 // @route   POST /api/expenses
 // @desc    Create a new expense
@@ -80,6 +81,7 @@ router.post('/', auth, [
 // @access  Private
 router.get('/group/:groupId', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.groupId)) return res.status(400).json({ message: 'Invalid group ID' });
     const group = await Group.findById(req.params.groupId);
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
@@ -106,6 +108,7 @@ router.get('/group/:groupId', auth, async (req, res) => {
 // @access  Private
 router.get('/:id', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid expense ID' });
     const expense = await Expense.findById(req.params.id)
       .populate('paidBy', 'name email')
       .populate('splits.user', 'name email')
@@ -127,6 +130,7 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.put('/:id', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid expense ID' });
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
@@ -176,6 +180,7 @@ router.put('/:id', auth, async (req, res) => {
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid expense ID' });
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });

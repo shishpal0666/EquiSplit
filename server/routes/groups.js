@@ -5,6 +5,7 @@ const Group = require('../models/Group');
 const User = require('../models/User');
 const Expense = require('../models/Expense');
 const auth = require('../middleware/auth');
+const { isValidObjectId } = require('../utils/validators');
 
 // @route   POST /api/groups
 // @desc    Create a new group
@@ -76,6 +77,7 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/:id', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid group ID' });
     const group = await Group.findById(req.params.id)
       .populate('members', 'name email')
       .populate('createdBy', 'name email');
@@ -105,6 +107,7 @@ router.put('/:id', auth, [
   body('members').optional().isArray()
 ], async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid group ID' });
     const group = await Group.findById(req.params.id);
 
     if (!group) {
@@ -143,6 +146,7 @@ router.put('/:id', auth, [
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid group ID' });
     const group = await Group.findById(req.params.id);
 
     if (!group) {

@@ -11,11 +11,11 @@
  */
 const calculateEqualSplit = (amount, participantIds) => {
   const perPerson = Math.round((amount / participantIds.length) * 100) / 100;
-  
+
   // Handle rounding — give the remainder to the first person
   const splits = participantIds.map((userId, index) => ({
     user: userId,
-    amount: perPerson
+    amount: perPerson,
   }));
 
   // Fix rounding errors
@@ -36,7 +36,7 @@ const calculateEqualSplit = (amount, participantIds) => {
  */
 const validateCustomSplit = (amount, splits) => {
   if (!splits || splits.length === 0) {
-    return { valid: false, message: 'At least one split is required' };
+    return { valid: false, message: "At least one split is required" };
   }
 
   const totalSplit = splits.reduce((sum, s) => sum + s.amount, 0);
@@ -44,15 +44,15 @@ const validateCustomSplit = (amount, splits) => {
   const roundedAmount = Math.round(amount * 100) / 100;
 
   if (Math.abs(roundedTotal - roundedAmount) > 0.01) {
-    return { 
-      valid: false, 
-      message: `Split amounts (${roundedTotal}) must equal the total expense (${roundedAmount})` 
+    return {
+      valid: false,
+      message: `Split amounts (${roundedTotal}) must equal the total expense (${roundedAmount})`,
     };
   }
 
   // Check for negative amounts
-  if (splits.some(s => s.amount < 0)) {
-    return { valid: false, message: 'Split amounts cannot be negative' };
+  if (splits.some((s) => s.amount < 0)) {
+    return { valid: false, message: "Split amounts cannot be negative" };
   }
 
   return { valid: true };

@@ -4,12 +4,14 @@ const Expense = require('../models/Expense');
 const Group = require('../models/Group');
 const auth = require('../middleware/auth');
 const { calculateNetBalances, calculateSettlements } = require('../utils/settlementEngine');
+const { isValidObjectId } = require('../utils/validators');
 
 // @route   GET /api/balances/:groupId
 // @desc    Get net balances for all members in a group
 // @access  Private
 router.get('/:groupId', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.groupId)) return res.status(400).json({ message: 'Invalid group ID' });
     const group = await Group.findById(req.params.groupId)
       .populate('members', 'name email');
 
@@ -50,6 +52,7 @@ router.get('/:groupId', auth, async (req, res) => {
 // @access  Private
 router.get('/:groupId/settlements', auth, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.groupId)) return res.status(400).json({ message: 'Invalid group ID' });
     const group = await Group.findById(req.params.groupId)
       .populate('members', 'name email');
 

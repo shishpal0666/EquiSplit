@@ -48,7 +48,7 @@ Respond with ONLY the category name, nothing else.`;
 
     res.json({ category, method: 'ai' });
   } catch (error) {
-    console.error('AI categorize error:', error);
+    console.log('AI categorize fallback — ', error.status || error.message || 'unknown error');
     // Fallback to keyword
     const category = keywordCategorize(req.body.description || '');
     res.json({ category, method: 'keyword-fallback' });
@@ -135,8 +135,18 @@ Respond with a JSON array of insight strings. Example: ["insight1", "insight2"]`
 
     res.json({ insights, stats, method: 'ai' });
   } catch (error) {
-    console.error('AI insights error:', error);
-    res.status(500).json({ message: 'Failed to generate insights' });
+    console.log('AI insights fallback — ', error.status || error.message || 'unknown error');
+    // Fallback: try to return basic insights instead of crashing
+    try {
+      const group = await Group.findById(req.params.groupId).populate('members', 'name email');
+      const expenses = await Expense.find({ group: req.params.groupId }).populate('paidBy', 'name email').sort({ date: -1 });
+      if (expenses.length > 0) {
+        const stats = calculateStats(expenses, group.members);
+        const insights = generateBasicInsights(stats, group.name);
+        return res.json({ insights, stats, method: 'basic-fallback' });
+      }
+    } catch {}
+    res.json({ insights: ['AI insights are temporarily unavailable. Add more expenses and try again later.'], stats: {}, method: 'fallback' });
   }
 });
 
