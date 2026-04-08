@@ -1,4 +1,4 @@
-# 💰 SplitWise Pro — Smart Expense Splitter
+# 💰 EquiSplit — Smart Expense Splitter
 
 A full-stack MERN application for splitting expenses among friends, roommates, and teams. Track shared costs, calculate balances in real-time, and settle up with minimum transactions — powered by AI insights.
 

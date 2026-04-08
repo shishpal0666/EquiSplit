@@ -3,7 +3,7 @@ const router = express.Router();
 const Expense = require('../models/Expense');
 const Group = require('../models/Group');
 const auth = require('../middleware/auth');
-const { calculateNetBalances, calculateSettlements } = require('../utils/settlementEngine');
+const { computeUserNetTotals, optimizeDebtTransfers } = require('../utils/settlementEngine');
 const { isValidObjectId } = require('../utils/validators');
 
 // @route   GET /api/balances/:groupId
@@ -27,8 +27,8 @@ router.get('/:groupId', auth, async (req, res) => {
       .populate('paidBy', 'name email')
       .populate('splits.user', 'name email');
 
-    const balanceMap = calculateNetBalances(expenses, group.members);
-
+    const balanceMap = computeUserNetTotals(expenses, group.members);
+    
     // Attach member info to balances
     const balances = group.members.map(member => ({
       user: member,
@@ -68,8 +68,8 @@ router.get('/:groupId/settlements', auth, async (req, res) => {
       .populate('paidBy', 'name email')
       .populate('splits.user', 'name email');
 
-    const balanceMap = calculateNetBalances(expenses, group.members);
-    const settlements = calculateSettlements(balanceMap);
+    const balanceMap = computeUserNetTotals(expenses, group.members);
+    const settlements = optimizeDebtTransfers(balanceMap);
 
     // Create a member lookup map
     const memberMap = {};

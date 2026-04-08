@@ -13,7 +13,7 @@ const Navbar = () => {
       <div className="navbar-inner">
         <Link to="/dashboard" className="navbar-brand">
           <div className="logo-icon">💰</div>
-          <span>SplitWise Pro</span>
+          <span>EquiSplit</span>
         </Link>
 
         <div className="navbar-links">

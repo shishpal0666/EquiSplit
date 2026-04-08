@@ -7,15 +7,14 @@
  * Calculate net balances for all members in a group
  * @param {Array} expenses - Array of expense documents with populated paidBy and splits
  * @param {Array} members - Array of member objects with _id
- * @returns {Object} Map of userId -> net balance (positive = owed money, negative = owes money)
+ * @returns {Object} Map of user ID -> total balance (positive = gets money back, negative = owes money)
  */
-const calculateNetBalances = (expenses, members) => {
-  const balances = {};
+const computeUserNetTotals = (expenses, members) => {
+  const totals = {};
 
-  // Initialize all members with 0 balance
-  members.forEach(member => {
-    const id = member._id ? member._id.toString() : member.toString();
-    balances[id] = 0;
+  members.forEach(m => {
+    const stringId = m._id ? m._id.toString() : m.toString();
+    totals[stringId] = 0;
   });
 
   // Process each expense
@@ -30,68 +29,62 @@ const calculateNetBalances = (expenses, members) => {
         ? split.user._id.toString() 
         : split.user.toString();
 
-      if (userId === payerId) {
-        // The payer's own share — they don't owe themselves
-        return;
+      if (userId !== payerId) {
+        totals[payerId] = parseFloat((totals[payerId] + split.amount).toFixed(2));
+        totals[userId] = parseFloat((totals[userId] - split.amount).toFixed(2));
       }
-
-      // The payer is owed this amount
-      balances[payerId] = Math.round((balances[payerId] + split.amount) * 100) / 100;
-      // This user owes this amount
-      balances[userId] = Math.round((balances[userId] - split.amount) * 100) / 100;
     });
   });
 
-  return balances;
+  return totals;
 };
 
 /**
  * Calculate optimized settlement plan using greedy algorithm
  * Minimizes the number of transactions needed to settle all debts
- * @param {Object} balances - Map of userId -> net balance
- * @returns {Array<{from: string, to: string, amount: number}>} Settlement transactions
+ * @param {Object} inputTotals - Map of userId -> net balance
+ * @returns {Array<{from: string, to: string, amount: number}>} Minimized transfers
  */
-const calculateSettlements = (balances) => {
-  const settlements = [];
+const optimizeDebtTransfers = (inputTotals) => {
+  const transfers = [];
 
-  // Separate into debtors and creditors
-  const debtors = []; // People who owe money (negative balance)
-  const creditors = []; // People who are owed money (positive balance)
+  // Group by who owes and who gets paid
+  const payers = [];
+  const receivers = [];
 
-  Object.entries(balances).forEach(([userId, balance]) => {
-    if (balance < -0.01) {
-      debtors.push({ userId, amount: Math.abs(balance) });
-    } else if (balance > 0.01) {
-      creditors.push({ userId, amount: balance });
+  Object.entries(inputTotals).forEach(([uid, val]) => {
+    if (val < -0.01) {
+      payers.push({ uid, amt: Math.abs(val) });
+    } else if (val > 0.01) {
+      receivers.push({ uid, amt: val });
     }
   });
 
-  // Sort by amount descending for greedy matching
-  debtors.sort((a, b) => b.amount - a.amount);
-  creditors.sort((a, b) => b.amount - a.amount);
+  payers.sort((a, b) => b.amt - a.amt);
+  receivers.sort((a, b) => b.amt - a.amt);
 
-  let i = 0, j = 0;
+  let pIndex = 0, rIndex = 0;
 
-  while (i < debtors.length && j < creditors.length) {
-    const settleAmount = Math.min(debtors[i].amount, creditors[j].amount);
-    const roundedAmount = Math.round(settleAmount * 100) / 100;
+  while (pIndex < payers.length && rIndex < receivers.length) {
+    const chunk = Math.min(payers[pIndex].amt, receivers[rIndex].amt);
+    const finalChunk = parseFloat(chunk.toFixed(2));
 
-    if (roundedAmount > 0.01) {
-      settlements.push({
-        from: debtors[i].userId,
-        to: creditors[j].userId,
-        amount: roundedAmount
+    if (finalChunk > 0.01) {
+      transfers.push({
+        from: payers[pIndex].uid,
+        to: receivers[rIndex].uid,
+        amount: finalChunk
       });
     }
 
-    debtors[i].amount = Math.round((debtors[i].amount - settleAmount) * 100) / 100;
-    creditors[j].amount = Math.round((creditors[j].amount - settleAmount) * 100) / 100;
+    payers[pIndex].amt = parseFloat((payers[pIndex].amt - chunk).toFixed(2));
+    receivers[rIndex].amt = parseFloat((receivers[rIndex].amt - chunk).toFixed(2));
 
-    if (debtors[i].amount < 0.01) i++;
-    if (creditors[j].amount < 0.01) j++;
+    if (payers[pIndex].amt < 0.01) pIndex++;
+    if (receivers[rIndex].amt < 0.01) rIndex++;
   }
 
-  return settlements;
+  return transfers;
 };
 
-module.exports = { calculateNetBalances, calculateSettlements };
+module.exports = { computeUserNetTotals, optimizeDebtTransfers };
