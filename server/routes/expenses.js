@@ -69,6 +69,12 @@ router.post('/', auth, [
       .populate('splits.user', 'name email')
       .populate('group', 'name');
 
+    // Real-time notification to group members
+    req.io.to(`group:${groupId}`).emit('expense:created', {
+      expense: populated,
+      message: `${req.user.name} added "${description}" — ₹${amount}`
+    });
+
     res.status(201).json(populated);
   } catch (error) {
     console.error('Create expense error:', error);
@@ -168,6 +174,12 @@ router.put('/:id', auth, async (req, res) => {
       .populate('splits.user', 'name email')
       .populate('group', 'name');
 
+    // Real-time notification to group members
+    req.io.to(`group:${expense.group}`).emit('expense:updated', {
+      expense: populated,
+      message: `${req.user.name} updated an expense`
+    });
+
     res.json(populated);
   } catch (error) {
     console.error('Update expense error:', error);
@@ -186,7 +198,15 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
+    const groupId = expense.group;
     await Expense.findByIdAndDelete(req.params.id);
+
+    // Real-time notification to group members
+    req.io.to(`group:${groupId}`).emit('expense:deleted', {
+      expenseId: req.params.id,
+      message: `${req.user.name} deleted an expense`
+    });
+
     res.json({ message: 'Expense deleted' });
   } catch (error) {
     console.error('Delete expense error:', error);

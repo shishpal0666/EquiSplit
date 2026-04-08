@@ -1,18 +1,43 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
 import { FiUsers, FiDollarSign, FiTrendingUp, FiPlus } from 'react-icons/fi';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { socket } = useSocket();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchGroups();
   }, []);
+
+  // Real-time socket listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleGroupCreated = (data) => {
+      toast.info(`🆕 ${data.message}`, { icon: false });
+      fetchGroups();
+    };
+
+    const handleGroupDeleted = (data) => {
+      toast.info(`🗑️ ${data.message}`, { icon: false });
+      fetchGroups();
+    };
+
+    socket.on('group:created', handleGroupCreated);
+    socket.on('group:deleted', handleGroupDeleted);
+
+    return () => {
+      socket.off('group:created', handleGroupCreated);
+      socket.off('group:deleted', handleGroupDeleted);
+    };
+  }, [socket]);
 
   const fetchGroups = async () => {
     try {

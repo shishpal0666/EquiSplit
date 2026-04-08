@@ -37,6 +37,14 @@ router.post('/', auth, [
       .populate('members', 'name email')
       .populate('createdBy', 'name email');
 
+    // Notify all members about the new group
+    memberIds.forEach(memberId => {
+      req.io.to(`user:${memberId}`).emit('group:created', {
+        group: populated,
+        message: `${req.user.name} created a new group "${name}"`
+      });
+    });
+
     res.status(201).json(populated);
   } catch (error) {
     console.error('Create group error:', error);
@@ -134,6 +142,12 @@ router.put('/:id', auth, [
       .populate('members', 'name email')
       .populate('createdBy', 'name email');
 
+    // Notify group members about the update
+    req.io.to(`group:${group._id}`).emit('group:updated', {
+      group: populated,
+      message: `${req.user.name} updated group "${populated.name}"`
+    });
+
     res.json(populated);
   } catch (error) {
     console.error('Update group error:', error);
@@ -156,6 +170,14 @@ router.delete('/:id', auth, async (req, res) => {
     if (group.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Only the group creator can delete the group' });
     }
+
+    // Notify group members about deletion
+    group.members.forEach(memberId => {
+      req.io.to(`user:${memberId}`).emit('group:deleted', {
+        groupId: group._id,
+        message: `${req.user.name} deleted group "${group.name}"`
+      });
+    });
 
     // Delete all group expenses
     await Expense.deleteMany({ group: group._id });

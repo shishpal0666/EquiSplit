@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
-import { FiPlus, FiArrowLeft, FiTrash2, FiDollarSign, FiUsers, FiTrendingUp, FiBarChart2 } from 'react-icons/fi';
+import { FiPlus, FiArrowLeft, FiTrash2, FiDollarSign, FiUsers, FiTrendingUp, FiBarChart2, FiWifi } from 'react-icons/fi';
 
 const CATEGORY_ICONS = {
   Food: '🍕',
@@ -30,6 +31,7 @@ const CATEGORY_COLORS = {
 const GroupDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { socket, joinGroup, leaveGroup } = useSocket();
   const navigate = useNavigate();
   const [group, setGroup] = useState(null);
   const [expenses, setExpenses] = useState([]);
@@ -41,7 +43,47 @@ const GroupDetail = () => {
 
   useEffect(() => {
     fetchAll();
+    // Join this group's socket room
+    joinGroup(id);
+    return () => leaveGroup(id);
   }, [id]);
+
+  // Real-time socket listeners for expense events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleExpenseCreated = (data) => {
+      toast.info(`💰 ${data.message}`, { icon: false });
+      fetchAll();
+    };
+
+    const handleExpenseUpdated = (data) => {
+      toast.info(`✏️ ${data.message}`, { icon: false });
+      fetchAll();
+    };
+
+    const handleExpenseDeleted = (data) => {
+      toast.info(`🗑️ ${data.message}`, { icon: false });
+      fetchAll();
+    };
+
+    const handleGroupUpdated = (data) => {
+      toast.info(`📝 ${data.message}`, { icon: false });
+      fetchAll();
+    };
+
+    socket.on('expense:created', handleExpenseCreated);
+    socket.on('expense:updated', handleExpenseUpdated);
+    socket.on('expense:deleted', handleExpenseDeleted);
+    socket.on('group:updated', handleGroupUpdated);
+
+    return () => {
+      socket.off('expense:created', handleExpenseCreated);
+      socket.off('expense:updated', handleExpenseUpdated);
+      socket.off('expense:deleted', handleExpenseDeleted);
+      socket.off('group:updated', handleGroupUpdated);
+    };
+  }, [socket]);
 
   const fetchAll = async () => {
     try {
@@ -110,7 +152,10 @@ const GroupDetail = () => {
           <h1 style={{ fontSize: 'var(--font-3xl)', fontWeight: 800, background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             {group.name}
           </h1>
-          {group.description && <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>{group.description}</p>}
+          <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-1)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {group.description || 'Group expenses'}
+            {socket?.connected && <FiWifi size={12} color="#34d399" title="Real-time updates active" />}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <Link to={`/groups/${id}/insights`} className="btn btn-secondary">

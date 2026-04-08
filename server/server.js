@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const http = require('http');
+const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 
 // Load env vars
@@ -11,6 +13,48 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+// Socket.io setup
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log(`⚡ Socket connected: ${socket.id}`);
+
+  // Join group rooms for real-time updates
+  socket.on('join-group', (groupId) => {
+    socket.join(`group:${groupId}`);
+    console.log(`Socket ${socket.id} joined group:${groupId}`);
+  });
+
+  // Leave group room
+  socket.on('leave-group', (groupId) => {
+    socket.leave(`group:${groupId}`);
+  });
+
+  // Join user's personal room (for dashboard updates)
+  socket.on('join-user', (userId) => {
+    socket.join(`user:${userId}`);
+    console.log(`Socket ${socket.id} joined user:${userId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`⚡ Socket disconnected: ${socket.id}`);
+  });
+});
+
+// Make io accessible to routes via req.io
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 // Middleware
 app.use(helmet());
@@ -47,8 +91,9 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Socket.io ready for real-time connections`);
 });
 
 module.exports = app;
