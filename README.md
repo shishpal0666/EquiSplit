@@ -12,6 +12,7 @@ A full-stack MERN application for splitting expenses among friends, roommates, a
 ## ✨ Features
 
 ### Core Features
+
 - **User Authentication** — Secure JWT-based registration and login
 - **Group Management** — Create groups, add/remove members by email search
 - **Expense Splitting** — Equal or custom split among selected members
@@ -20,11 +21,13 @@ A full-stack MERN application for splitting expenses among friends, roommates, a
 - **Expense Categories** — Food, Travel, Rent, Entertainment, Utilities, Shopping, Healthcare
 
 ### AI-Powered Features (Google Gemini)
+
 - **Smart Categorization** — Auto-categorizes expenses based on description using AI
 - **Spending Insights** — AI-generated analysis of spending patterns and trends
 - **Category & Member Analytics** — Interactive charts (pie + bar) powered by Chart.js
 
 ### UX & Design
+
 - **Premium Dark Theme** with glassmorphism effects
 - **Responsive Design** — Mobile, tablet, and desktop
 - **Micro-Animations** — Smooth transitions and hover effects
@@ -79,23 +82,27 @@ SmartExpenseSplitter/
 ## 🚀 Setup Instructions
 
 ### Prerequisites
+
 - Node.js v18+
 - MongoDB Atlas account (free tier)
 - Google Gemini API key (free at [aistudio.google.com](https://aistudio.google.com/app/apikey))
 
 ### 1. Clone the Repository
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/SmartExpenseSplitter.git
-cd SmartExpenseSplitter
+git clone https://github.com/shishpal0666/EquiSplit.git
+cd EquiSplit
 ```
 
 ### 2. Backend Setup
+
 ```bash
 cd server
 npm install
 ```
 
 Create a `.env` file in the `server/` directory:
+
 ```env
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/expense-splitter?retryWrites=true&w=majority
 JWT_SECRET=your_super_secret_jwt_key_here
@@ -105,11 +112,13 @@ CLIENT_URL=http://localhost:5173
 ```
 
 Start the server:
+
 ```bash
 npm run dev
 ```
 
 ### 3. Frontend Setup
+
 ```bash
 cd client
 npm install
@@ -122,19 +131,21 @@ The app will be available at `http://localhost:5173`
 
 ## 🧠 Technical Decisions & Trade-offs
 
-| Decision | Rationale |
-|----------|-----------|
-| **JWT Authentication** | Stateless, scalable, works well with REST APIs |
-| **MongoDB Atlas** | Flexible schema for groups with variable members, free tier available |
-| **Greedy Settlement Algorithm** | O(n log n) complexity, minimizes transactions efficiently |
-| **Vite + React** | Lightning-fast HMR, modern build tooling |
-| **Google Gemini API** | Free tier with generous limits, good categorization accuracy |
-| **Keyword Fallback** | AI fails gracefully — keyword matching when API key is missing |
-| **CSS Custom Properties** | Complete design system without framework overhead |
-| **Axios Interceptors** | Automatic token injection and 401 redirect handling |
+| Decision                        | Rationale                                                             |
+| ------------------------------- | --------------------------------------------------------------------- |
+| **JWT Authentication**          | Stateless, scalable, works well with REST APIs                        |
+| **MongoDB Atlas**               | Flexible schema for groups with variable members, free tier available |
+| **Greedy Settlement Algorithm** | O(n log n) complexity, minimizes transactions efficiently             |
+| **Vite + React**                | Lightning-fast HMR, modern build tooling                              |
+| **Google Gemini API**           | Free tier with generous limits, good categorization accuracy          |
+| **Keyword Fallback**            | AI fails gracefully — keyword matching when API key is missing        |
+| **CSS Custom Properties**       | Complete design system without framework overhead                     |
+| **Axios Interceptors**          | Automatic token injection and 401 redirect handling                   |
 
 ### Settlement Algorithm
+
 Uses a greedy min-transaction approach:
+
 1. Calculate net balance for each member
 2. Separate into debtors (negative) and creditors (positive)
 3. Sort by amount descending
@@ -147,25 +158,25 @@ This produces near-optimal results with O(n log n) time complexity.
 
 ## 📡 API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login & get JWT |
-| GET | `/api/auth/me` | Get current user |
-| GET | `/api/auth/users/search` | Search users by email |
-| POST | `/api/groups` | Create group |
-| GET | `/api/groups` | List user's groups |
-| GET | `/api/groups/:id` | Get group details |
-| PUT | `/api/groups/:id` | Update group |
-| DELETE | `/api/groups/:id` | Delete group |
-| POST | `/api/expenses` | Create expense |
-| GET | `/api/expenses/group/:id` | List group expenses |
-| PUT | `/api/expenses/:id` | Update expense |
-| DELETE | `/api/expenses/:id` | Delete expense |
-| GET | `/api/balances/:groupId` | Get net balances |
-| GET | `/api/balances/:groupId/settlements` | Get settlement plan |
-| POST | `/api/ai/categorize` | AI categorize expense |
-| POST | `/api/ai/insights/:groupId` | AI spending insights |
+| Method | Endpoint                             | Description           |
+| ------ | ------------------------------------ | --------------------- |
+| POST   | `/api/auth/register`                 | Register new user     |
+| POST   | `/api/auth/login`                    | Login & get JWT       |
+| GET    | `/api/auth/me`                       | Get current user      |
+| GET    | `/api/auth/users/search`             | Search users by email |
+| POST   | `/api/groups`                        | Create group          |
+| GET    | `/api/groups`                        | List user's groups    |
+| GET    | `/api/groups/:id`                    | Get group details     |
+| PUT    | `/api/groups/:id`                    | Update group          |
+| DELETE | `/api/groups/:id`                    | Delete group          |
+| POST   | `/api/expenses`                      | Create expense        |
+| GET    | `/api/expenses/group/:id`            | List group expenses   |
+| PUT    | `/api/expenses/:id`                  | Update expense        |
+| DELETE | `/api/expenses/:id`                  | Delete expense        |
+| GET    | `/api/balances/:groupId`             | Get net balances      |
+| GET    | `/api/balances/:groupId/settlements` | Get settlement plan   |
+| POST   | `/api/ai/categorize`                 | AI categorize expense |
+| POST   | `/api/ai/insights/:groupId`          | AI spending insights  |
 
 ---
 
