@@ -20,10 +20,13 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    // Connect to socket server
-    const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // Ensure we don't connect to /api namespace if VITE_API_URL has /api suffix
+    let socketUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+    socketUrl = socketUrl.replace(/\/api\/?$/, '');
+
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
+      withCredentials: true // match server's credentials: true
     });
 
     newSocket.on('connect', () => {
